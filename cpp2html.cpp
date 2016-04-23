@@ -10,7 +10,7 @@
  *
  *
  * Finally, please indicate approximately how many hours you spent on this:
- * #hours: 
+ * #hours:
  */
 
 #include "fsm.h"
@@ -84,10 +84,68 @@ string translateHTMLReserved(char c) {
 	}
 }
 
+string createSpan(string str, int state){
+	string output;
+	switch(state){
+		case 1:
+			output+=hlspans[hlmap[str]] + str + spanend;
+		case 2:
+
+		case 3:
+
+		case 4:
+
+		case 5:
+
+		case 6:
+
+		case 7:
+
+		break;
+	}
+	return output;
+}
+
+string htmler(string s){
+	string output;
+	string temp;
+	int cstate = start;
+	for (unsigned long i = 0; i < s.length(); i++) {
+		int laststate=updateState(cstate,s[i]);
+		if (cstate!=laststate){
+			if(laststate==0){
+				temp+= s[i];
+
+						/*NOTE: essentially what im thinking here is
+						to start off the span once the state is no longer zero
+						and end that span once the state returns to zero.
+						ex: if you are a 0 then go to a 1, you start a span
+						 		if you are a 1 then go to a zero, you end a span
+						*/
+			}else if(cstate==0){
+				output+=createSpan(temp,laststate);
+				temp="";
+				//once we return to zero, this takes the content of
+				//the nonzero state along with that state and has a
+				//separate program make the span for those things
+			}
+		}else{
+			if(cstate!=0){
+				temp +=s[i];
+			}else{
+				output+= s[i];
+			}
+		}
+	}
+	return output;
+}
+
 int main() {
-	// TODO: write the main program.
-	// It may be helpful to break this down and write
-	// a function that processes a single line, which
-	// you repeatedly call from main().
+	string input;
+	string output;
+	while(getline(cin,input)){
+		output+=htmler(input);
+	}
+	cout << output <<"\n";
 	return 0;
 }
