@@ -84,27 +84,45 @@ string translateHTMLReserved(char c) {
 	}
 }
 
+short highlighter(string s)
+{
+	map<string, short>::iterator it;
+	it = hlmap.find(s);
+	if (it != hlmap.end())
+		return hlmap[s];
+}
+
 string createSpan(string str, int state){
 	string output="";
 	switch(state){
 		case 0:
 			output+=str;
 			break;
-		case 1:
-			output+=hlspans[hlmap[str]] + str + spanend;
+		case 1: //scanid
+			output+=hlspans[highlighter(str)] + str + spanend;
 			break;
-		case 2:
-
-		case 3:
-
-		case 4:
-
-		case 5:
-
-		case 6:
-
-		case 7:
-		break;
+		case 2: //comment
+			output+=hlspans[hlcomment] + str + spanend;
+			break;
+		case 3: //strlit
+			output+=hlspans[hlstrlit] + str + spanend;
+			break;
+		case 4: //readfs
+			output+=hlspans[hlcomment] + str + spanend;
+			break;
+			//not sure if correct, since a forward slash within a string would be 
+			//highlighted as a string, right?
+		case 5: //readesc
+			output+=hlspans[hlescseq] + str + spanend;
+			break;
+			//it higlights the "\" correctly, but the character following it is 
+			//not highlighted correctly
+		case 6: //scannum
+			output+=hlspans[hlnumeric] + str + spanend;
+			break;
+		case 7: //error
+			output+=hlspans[hlerror] + str + spanend;
+			break;
 	}
 	return output;
 	/*
@@ -127,13 +145,13 @@ string htmler(string s){
 			if(temp!=""){
 				output+=createSpan(temp,laststate);
 				temp="";
-				temp+=s[i];
+				temp+=translateHTMLReserved(s[i]);
 			}else{
-				temp+=s[i];
+				temp+=translateHTMLReserved(s[i]);
 			}
 		}else{
 			if(i!=s.length()-1){
-				temp+=s[i];
+				temp+=translateHTMLReserved(s[i]);
 			}else{
 				output+=createSpan(temp+s[i],laststate);
 			}
@@ -146,7 +164,7 @@ int main() {
 	string input;
 	string output;
 	while(getline(cin,input)){
-		output+=htmler(input);
+		output+=htmler(input) + "\n";
 	}
 	cout << output <<"\n";
 	return 0;
