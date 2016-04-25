@@ -85,10 +85,14 @@ string translateHTMLReserved(char c) {
 }
 
 string createSpan(string str, int state){
-	string output;
+	string output="";
 	switch(state){
+		case 0:
+			output+=str;
+			break;
 		case 1:
 			output+=hlspans[hlmap[str]] + str + spanend;
+			break;
 		case 2:
 
 		case 3:
@@ -100,40 +104,38 @@ string createSpan(string str, int state){
 		case 6:
 
 		case 7:
-
 		break;
 	}
 	return output;
+	/*
+	//for testing, comment out the return and
+	//remove the block comment limits
+	//this shows state of input and input itself for troubleshooting
+	cout<<"{"<<state<<","<<str<<"}"<<"\n";
+	return "";
+	*/
 }
 
 string htmler(string s){
 	string output;
-	string temp;
+	string temp="";
 	int cstate = start;
 	for (unsigned long i = 0; i < s.length(); i++) {
 		int laststate=updateState(cstate,s[i]);
+		cout<<cstate;
 		if (cstate!=laststate){
-			if(laststate==0){
-				temp+= s[i];
-
-						/*NOTE: essentially what im thinking here is
-						to start off the span once the state is no longer zero
-						and end that span once the state returns to zero.
-						ex: if you are a 0 then go to a 1, you start a span
-						 		if you are a 1 then go to a zero, you end a span
-						*/
-			}else if(cstate==0){
+			if(temp!=""){
 				output+=createSpan(temp,laststate);
 				temp="";
-				//once we return to zero, this takes the content of
-				//the nonzero state along with that state and has a
-				//separate program make the span for those things
+				temp+=s[i];
+			}else{
+				temp+=s[i];
 			}
 		}else{
-			if(cstate!=0){
-				temp +=s[i];
+			if(i!=s.length()-1){
+				temp+=s[i];
 			}else{
-				output+= s[i];
+				output+=createSpan(temp+s[i],laststate);
 			}
 		}
 	}
