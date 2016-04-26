@@ -10,7 +10,7 @@
  *
  *
  * Finally, please indicate approximately how many hours you spent on this:
- * #hours:
+ * #hours: 6
  */
 
 #include "fsm.h"
@@ -90,6 +90,7 @@ short highlighter(string s)
 	it = hlmap.find(s);
 	if (it != hlmap.end())
 		return hlmap[s];
+	return -1;
 }
 
 string createSpan(string str, int state){
@@ -99,16 +100,21 @@ string createSpan(string str, int state){
 			output+=str;
 			break;
 		case 1: //scanid
-			output+=hlspans[highlighter(str)] + str + spanend;
+			if (hlspans[highlighter(str)] != "") {
+				output+=hlspans[highlighter(str)] + str + spanend;
+			}
+			else {
+				output+=str;
+			}
 			break;
 		case 2: //comment
-			output+=hlspans[hlcomment] + str + spanend;
+			output+=str + spanend;
 			break;
 		case 3: //strlit
 			output+=hlspans[hlstrlit] + str + spanend;
 			break;
 		case 4: //readfs
-			output+=hlspans[hlcomment] + str + spanend;
+			output+=hlspans[hlcomment] + str;
 			break;
 			//not sure if correct, since a forward slash within a string would be 
 			//highlighted as a string, right?
@@ -125,13 +131,6 @@ string createSpan(string str, int state){
 			break;
 	}
 	return output;
-	/*
-	//for testing, comment out the return and
-	//remove the block comment limits
-	//this shows state of input and input itself for troubleshooting
-	cout<<"{"<<state<<","<<str<<"}"<<"\n";
-	return "";
-	*/
 }
 
 string htmler(string s){
@@ -140,20 +139,59 @@ string htmler(string s){
 	int cstate = start;
 	for (unsigned long i = 0; i < s.length(); i++) {
 		int laststate=updateState(cstate,s[i]);
-		cout<<cstate;
 		if (cstate!=laststate){
-			if(temp!=""){
+			if (cstate == 5) {
+				//escape char
 				output+=createSpan(temp,laststate);
-				temp="";
-				temp+=translateHTMLReserved(s[i]);
+				temp=s[i];
+			}
+			else if (temp!=""){
+				if (laststate != 5) {
+					if(i!=s.length()-1){
+						output+=createSpan(temp,laststate);
+						temp="";
+						temp+=translateHTMLReserved(s[i]);
+					}
+					else{
+						if (s[i] == ';') {
+							//endline semicolons aren't in spans
+							output+=createSpan(temp,laststate);
+							output+=s[i];	
+						}
+						else {
+							output+=createSpan(temp+translateHTMLReserved(s[i]),laststate);
+						}
+					}
+				}
+				else {
+					if (cstate == 3) {
+						//1 char escape
+						output+=createSpan(temp+translateHTMLReserved(s[i]),laststate);
+						temp="";
+					}
+					else {
+						//error
+						temp += s[i];
+					}
+				}
 			}else{
-				temp+=translateHTMLReserved(s[i]);
+				if(i!=s.length()-1) {
+					if (s[i] == '"' and laststate == 3) {
+						output+=createSpan(translateHTMLReserved(s[i]),laststate);
+					}
+					else{
+						temp+=translateHTMLReserved(s[i]);
+					}
+				}
+				else{
+					output+=createSpan(translateHTMLReserved(s[i]),laststate);
+				}
 			}
 		}else{
 			if(i!=s.length()-1){
 				temp+=translateHTMLReserved(s[i]);
 			}else{
-				output+=createSpan(temp+s[i],laststate);
+				output+=createSpan(temp+translateHTMLReserved(s[i]),laststate);
 			}
 		}
 	}
